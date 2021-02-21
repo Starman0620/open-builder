@@ -68,13 +68,15 @@ namespace {
      */
     void renderChunks(const ChunkRenderList& chunks, const ViewFrustum& frustum,
                       gl::UniformLocation chunkPositionLocation,
-                      ChunkRenderResult& outResult, const glm::vec3& cameraPosition)
+                      ChunkRenderResult& outResult, const glm::vec3& cameraPosition, bool isLiquid)
     {
         for (const auto& chunk : chunks) {
             if (isChunkInRenderDistance(cameraPosition, chunk.position) &&
                 frustum.chunkIsInFrustum(chunk.position)) {
 
                 glm::vec3 cp{chunk.position.x, chunk.position.y, chunk.position.z};
+				if(isLiquid)
+					cp.y -= 0.0035f;
                 cp *= CHUNK_SIZE;
                 gl::loadUniform(chunkPositionLocation, cp);
 
@@ -138,11 +140,11 @@ ChunkRenderResult ChunkRenderer::renderChunks(const Camera& camera, bool cameraI
     // Solid voxels
     m_shader.program.bind();
     gl::loadUniform(m_shader.projectionViewLocation, pv);
-    ::renderChunks(solidDrawables, frustum, m_shader.chunkPositionLocation, result, pos);
+    ::renderChunks(solidDrawables, frustum, m_shader.chunkPositionLocation, result, pos, false);
 
     // Flora voxels
     glDisable(GL_CULL_FACE);
-    ::renderChunks(floraDrawables, frustum, m_shader.chunkPositionLocation, result, pos);
+    ::renderChunks(floraDrawables, frustum, m_shader.chunkPositionLocation, result, pos, false);
     glEnable(GL_CULL_FACE);
 
     // Fluid voxels
@@ -150,7 +152,7 @@ ChunkRenderResult ChunkRenderer::renderChunks(const Camera& camera, bool cameraI
     if (cameraInWater) {
         glCheck(glCullFace(GL_FRONT));
     }
-    ::renderChunks(fluidDrawables, frustum, m_shader.chunkPositionLocation, result, pos);
+    ::renderChunks(fluidDrawables, frustum, m_shader.chunkPositionLocation, result, pos, true);
     glCheck(glCullFace(GL_BACK));
     glCheck(glDisable(GL_BLEND));
 
